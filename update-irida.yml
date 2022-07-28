@@ -3,24 +3,9 @@
    become: yes
    hosts: all
    tasks:
-     - name: Stop Supervisor service
-       service:
-         name: supervisor
-         state:  stopped
-
-     - name: Delete pids
-       file:
-         name: "{{ item }}"
-         state: absent
-       ignore_errors: yes
-       loop:
-         - /tmp/nrreceiver.pid
-         - /tmp/janus.log
-         - /var/log/irida/media-agent.log 
-         - /run/php/irida.sock
-         - /run/php/php7.0-fpm.sock
+     
     
-     - name: Ugrade iriada srv
+     - name: Ugrade iriada-core
        apt:
           name: irida-core-experimental
           state: latest
@@ -28,11 +13,7 @@
        tags:
          - core
           
-     - name: Start Supervisor service
-       service:
-         name: supervisor
-         state:  started
-
+    
      - name: Ugrade iriada-directory
        apt:
           name: irida-directory
