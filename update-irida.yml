@@ -21,6 +21,14 @@
           update_cache: yes
        tags:
          - dir
+         
+     - name: Ugrade iriada-emergencyroom
+       apt:
+          name: irida-emergencyroom
+          state: latest
+          update_cache: yes
+       tags:
+         - em 
 
      
          
