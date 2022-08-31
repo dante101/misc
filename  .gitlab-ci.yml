@@ -1,0 +1,101 @@
+image: r.web-lab/docker/original/debian:latest
+
+stages:
+  - build
+  - trigger
+
+
+build-job:
+  environment: jetson-api
+  stage: build
+  script:
+    - |
+      echo "================= Start Build stage ======================================="
+      echo "10.1.0.72 repo" >> /etc/hosts
+      echo deb http://repo/debian/ stretch main contrib non-free > /etc/apt/sources.list
+      cat /etc/apt/sources.list
+
+      echo "============= Start APT update and Git install ============================"
+      apt update && apt install -y git &> /dev/null
+      
+      echo "============== Checkout to Master branch =================================="
+      git checkout master
+      git pull
+      
+      echo "=============== Definition Variables ======================================="
+      i=$(cat requirements.txt)
+      DEPENDS=$(echo $i |  sed "s/ /, /g")
+      VER=`cat version`
+      DESCRIPTION='Сервис по работе с Jetson'
+      TIMESTAMP=`date +%Y-%m-%d`
+      IGNORE=".git .gitignore README.md .gitkeep"      
+      BUILD_PATH="/build-package"
+      OPT_PATH="/opt/"
+      ETC_PATH="/etc/"
+      F_PATH=${BUILD_PATH}/${CI_PROJECT_TITLE}
+      INST_PATH=${OPT_PATH}${CI_PROJECT_TITLE}
+      
+      echo "DEPENDS=${DEPENDS}"
+      echo "VER=${VER}"
+      echo "DESCRIPTION=${DESCRIPTION}"
+      echo "TIMESTAMP=${TIMESTAMP}"
+      echo "IGNORE=${IGNORE}"
+      echo "BUILD_PATH=${BUILD_PATH}"
+      echo "OPT_PATH=${OPT_PATH}"
+      echo "ETC_PATH=${ETC_PATH}"
+      echo "F_PATH=${F_PATH}"
+      echo "INST_PATH=${INST_PATH}"
+
+
+
+      echo "============== Create directories and Copy files ========================="   
+      mkdir -pv ${F_PATH}{${OPT_PATH},${ETC_PATH}}
+      mkdir -pv ${F_PATH}${OPT_PATH}${CI_PROJECT_TITLE}
+      mkdir -pv ${F_PATH}${ETC_PATH}${CI_PROJECT_TITLE}/
+      mkdir -pv ${F_PATH}${ETC_PATH}supervisor/templates/
+      echo "==================================="
+      cp -vr * ${F_PATH}${INST_PATH}
+      cp  config/config.default.yaml ${F_PATH}${ETC_PATH}${CI_PROJECT_TITLE}/config.yaml
+      cp  config/jetson.conf  ${F_PATH}${ETC_PATH}supervisor/templates/jetson.conf
+      
+      echo "============== Add execute files ========================="
+      chmod a+x ${F_PATH}${OPT_PATH}${CI_PROJECT_TITLE}/jetson-api.sh
+
+
+      git checkout deb
+      git pull
+      cp -r DEBIAN ${F_PATH}
+      cp -r etc ${F_PATH}
+      for i in $IGNORE; do find ${BUILD_PATH} -type f -iname ${i} -exec rm -vrf $i {} +; done
+      ls -l ${F_PATH}
+
+      echo "============== Fill DEBIAN/control  file ==================================="
+      sed "s|##VERSION##|${VER}-${CI_JOB_ID}|g" -i ${F_PATH}/DEBIAN/control
+      sed "s|##PACKAGE##|${CI_PROJECT_TITLE}|g"		-i ${F_PATH}/DEBIAN/control
+      sed "s|##DATE##|${TIMESTAMP}|g"		-i ${F_PATH}/DEBIAN/control
+      sed "s|##DEPENDS##|${DEPENDS}|g"		-i ${F_PATH}/DEBIAN/control
+      sed "s|##DESCRIPTION##|${DESCRIPTION}|g"  -i ${F_PATH}/DEBIAN/control
+      cat ${F_PATH}/DEBIAN/control
+      
+      while read i; do md5sum $i; done < <(find ${BUILD_PATH} -type f) | tee -a ${F_PATH}/DEBIAN/md5sums &> /dev/null
+      sed "s|${F_PATH}||g" -i ${F_PATH}/DEBIAN/md5sums
+      
+      echo "=================== Build package ========================================="
+      DEB_NAME=${CI_PROJECT_TITLE}.deb
+      dpkg-deb -b ${F_PATH} ${DEB_NAME}
+      echo "${DEB_NAME}"
+      
+      echo "=================== End of build-job ========================================="
+  artifacts:
+    name: jetson-api
+    paths:
+    - ./*.deb
+    expire_in: 1 day
+
+trigger_teamcity:
+  tags:
+    - non-docker
+  stage: trigger
+  script:
+     - |
+       curl --header "Authorization: Bearer $teamcity_access_token" -X POST -d '<build><buildType id="Bortnik_All_JetsonApi"/></build>' --header Content-Type:application/xml http://teamcity-astra.unit.spb:8111/app/rest/buildQueue
