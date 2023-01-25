@@ -52,7 +52,7 @@
          - em
          
      - debug:
-         var: package_version
+         var: package_version.stdout
        tags:
          - core
          - dir
