@@ -12,6 +12,13 @@
           update_cache: yes
        tags:
          - core
+     
+     - name: Get package Core version
+       shell:
+         cmd: apt policy irida-core
+       register: package_version
+       tags:
+         - core
           
     
      - name: Ugrade iriada-directory
@@ -22,6 +29,13 @@
        tags:
          - dir
          
+     - name: Get package Core version
+       shell:
+         cmd: apt policy irida-core
+       register: package_version
+       tags:
+         - dir
+         
      - name: Ugrade iriada-emergencyroom
        apt:
           name: irida-emergencyroom
@@ -29,6 +43,20 @@
           update_cache: yes
        tags:
          - em 
+         
+     - name: Get package Core version
+       shell:
+         cmd: apt policy irida-core
+       register: package_version
+       tags:
+         - em
+         
+     - debug:
+         var: package_version
+       tags:
+         - core
+         - dir
+         - em
 
      
          
