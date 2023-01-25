@@ -15,7 +15,7 @@
      
      - name: Get package Core version
        shell:
-         cmd: apt policy irida-core
+         cmd: apt policy irida-core-experimental
        register: package_version
        tags:
          - core
@@ -29,9 +29,9 @@
        tags:
          - dir
          
-     - name: Get package Core version
+     - name: Get package Directory version
        shell:
-         cmd: apt policy irida-core
+         cmd: apt policy irida-directory
        register: package_version
        tags:
          - dir
@@ -44,9 +44,9 @@
        tags:
          - em 
          
-     - name: Get package Core version
+     - name: Get package Emergencyroom version
        shell:
-         cmd: apt policy irida-core
+         cmd: apt policy irida-emergencyroom
        register: package_version
        tags:
          - em
