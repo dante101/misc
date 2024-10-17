@@ -1,0 +1,15 @@
+- name: Install unzip
+  ansible.builtin.apt:
+    name: 'unzip'
+    state: present
+- name: Create folder
+  ansible.builtin.file:
+    path: '/var/www/sites/joomla'
+    state: directory
+    owner: 'www-data'
+    mode: '0644'
+- name: Joomla install
+  ansible.builtin.unarchive:
+   src: 'https://downloads.joomla.org/cms/joomla5/5-1-4/Joomla_5-1-4-Stable-Full_Package.zip?format=zip' 
+   dest: '/var/www/sites/joomla/'
+   remote_src: true

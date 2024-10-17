@@ -1,0 +1,9 @@
+---
+ - name: Nginx
+   become: true
+   hosts: all
+   roles:
+     - nginx
+     - mysql
+     - joomla
+  

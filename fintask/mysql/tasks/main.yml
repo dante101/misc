@@ -1,0 +1,25 @@
+- name: Install mysql
+  ansible.builtin.apt:
+    name: "{{ item }}"
+    state: present
+    update_cache: true
+  loop:
+    - 'php8.1-mysql'
+    - 'mariadb-server'
+    - 'python3-mysqldb'
+- name: Myqsl users admin
+  community.mysql.mysql_user:
+   login_user: 'root'
+   login_password: "{{ mysql_root_pass }}"
+   name: 'admin'
+   password: "{{ mysql_admin_pass }}"
+   priv: '*.*:ALL'
+   state: present
+- name: Mysql root
+  community.mysql.mysql_user:
+   login_user: 'root'
+   login_password: "{{ mysql_root_pass }}"
+   name: 'root'
+   password: "{{ mysql_root_pass }}"
+   priv: '*.*:ALL'
+   state: present

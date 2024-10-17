@@ -1,0 +1,27 @@
+---
+
+     - name: Install nginx
+       ansible.builtin.apt:
+         name: "{{ item }}"
+         state: present
+         update_cache: true
+       loop:
+        - 'nginx'
+        - 'php8.1-fpm'
+        - 'php8.1'
+     - name: Config site
+       ansible.builtin.template:
+         src: joomla.conf.j2
+         dest: /etc/nginx/sites-available/joomla.conf
+         owner: www-data
+         mode: '0644'
+     - name: Config site
+       ansible.builtin.file:
+         path: /etc/nginx/sites-enabled/default
+         state: absent
+     - name: Config site
+       ansible.builtin.file:
+         src: /etc/nginx/sites-available/joomla.conf
+         dest: /etc/nginx/sites-enabled/joomla.conf
+         state: link
+
