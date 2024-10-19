@@ -1,0 +1,69 @@
+---
+  - name: Site
+    become: true
+    hosts: all
+    vars_files:
+         - '/home/user/task/products.yaml'
+    tasks:
+      - name: Create list
+        set_fact:
+           list2: "{{ products | selectattr('name', 'defined') | map(attribute='name') }}"
+
+      - name:  install nginx package
+        ansible.builtin.apt:
+          name: nginx
+          state: latest
+          update_cache: yes
+
+      - name: Enable service httpd, and not touch the state
+        ansible.builtin.service:
+           name: nginx
+           enabled: yes
+
+      - name: Conf
+        copy:
+          src:  nginx.conf
+          dest: /etc/nginx/nginx.conf
+        notify: nginx reload
+
+      - name: Remove file (delete file)
+        ansible.builtin.file:
+          path: "{{ item }}"
+          state: absent
+        loop:
+          - "/etc/nginx/sites-enabled/default"
+          - "/var/www/html/index.nginx-debian.html"
+
+      - name: Template a file to /etc/file.conf
+        ansible.builtin.template:
+          src:  site.conf.j2
+          dest: /etc/nginx/sites-available/site.conf
+          owner: www-data
+          mode: '0644'
+
+      - name: Link
+        ansible.builtin.file:
+         src: /etc/nginx/sites-available/site.conf
+         dest: /etc/nginx/sites-enabled/site.conf
+         state: link
+
+      - name: Создать статические страницы продуктов
+        template:
+          src: template.html.j2 
+          dest: "/var/www/html/{{ item.name | lower }}.html"
+        loop: "{{ products }}"
+
+      - name: Main
+        ansible.builtin.template:
+          src: DVPS-ANS-07/site/index.html
+          dest: "/var/www/html/index.html"
+          owner: "www-data"
+          mode: '0644'
+        loop: "{{ products }}"
+      
+
+    handlers:
+    -  name: nginx reload
+       ansible.builtin.service:
+           name: nginx
+           state: restarted
